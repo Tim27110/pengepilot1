@@ -1,0 +1,501 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111315">
+<meta name="description" content="PengePilot — enkel personlig økonomi som lagrer lokalt i nettleseren.">
+<title>PengePilot</title>
+<base href="./">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f7;color:#17191c;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:1050px;margin:auto;padding:16px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.logo{font-size:26px;font-weight:800}.pill{font-size:11px;background:#e8f5eb;color:#17652a;padding:7px 10px;border-radius:20px}nav{display:flex;gap:6px;overflow:auto;margin-bottom:18px}nav button{border:0;background:#fff;padding:10px 13px;border-radius:10px;white-space:nowrap}nav button.active{background:#17191c;color:#fff}.page{display:none}.page.active{display:block}h1{font-size:30px;margin:4px 0}h2{font-size:19px}.muted{color:#70757b;font-size:13px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.two{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}.card,.stat{background:#fff;border-radius:17px;padding:18px;box-shadow:0 4px 18px #0000000a;margin-bottom:12px}.stat{margin:0}.label{font-size:12px;color:#70757b}.value{font-size:24px;font-weight:750;margin-top:5px}.action{padding:13px;border:1px solid #e5e6e8;border-radius:12px;margin:9px 0;border-left:4px solid #222}.good{border-left-color:#2b9a4b}.warn{border-left-color:#d59b1c}.bad{border-left-color:#c74343}.row{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #eee}.row:last-child{border:0}.tag{font-size:10px;background:#eef0f2;padding:4px 7px;border-radius:15px}.form{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}input,select,textarea{width:100%;padding:11px;border:1px solid #ddd;border-radius:9px;font-size:15px;background:#fff}button.primary{background:#17191c;color:#fff;border:0;border-radius:10px;padding:11px 14px;margin-top:10px;cursor:pointer}.button2{background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px 13px;cursor:pointer}.progress{height:9px;background:#e7e9eb;border-radius:20px;overflow:hidden}.progress div{height:100%;background:#17191c;border-radius:20px}.chat{background:#f7f8f9;border-radius:13px;padding:12px;margin:8px 0;max-width:78%}.ai{background:#17191c;color:#fff;margin-left:25px;margin-right:auto}.user{background:#e7f0ff;margin-left:auto}.small{font-size:11px;color:#777}.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#17191c;color:#fff;padding:11px 15px;border-radius:12px;display:none;z-index:10}.danger{color:#b42318}.empty{padding:18px;text-align:center;color:#777}.tx-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.delete{border:0;background:transparent;color:#b42318;cursor:pointer}.goal-card{border:1px solid #eee;border-radius:12px;padding:14px;margin:10px 0}.score{font-size:34px;font-weight:800}.summary{display:flex;gap:8px;flex-wrap:wrap}.summary span{background:#f5f5f5;padding:7px 9px;border-radius:9px;font-size:12px}.coach-input{display:flex;gap:8px;align-items:center;margin-top:12px}.coach-input input{flex:1}.typing{height:18px;margin:6px 0;color:#666;font-size:13px}
+@media(max-width:750px){.grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}}@media(max-width:480px){.app{padding:12px}.form{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}.value{font-size:21px}.top{align-items:flex-start}.logo{font-size:23px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo">💰 PengePilot</div>
+    <div class="pill">V3 • LAGRER DATA</div>
+  </div>
+
+  <nav>
+    <button class="active" onclick="tab('home',this)" type="button">Oversikt</button>
+    <button onclick="tab('tx',this)" type="button">Penger</button>
+    <button onclick="tab('goals',this)" type="button">Mål</button>
+    <button onclick="tab('coach',this)" type="button">AI-coach</button>
+    <button onclick="tab('profile',this)" type="button">Profil</button>
+  </nav>
+
+  <section id="home" class="page active">
+    <h1>Din økonomi</h1>
+    <p class="muted">PengePilot forteller deg ikke bare hva du har brukt – men hva du bør gjøre nå.</p>
+
+    <div class="grid">
+      <div class="stat"><div class="label">Inntekt</div><div class="value" id="sIncome">0 kr</div></div>
+      <div class="stat"><div class="label">Utgifter</div><div class="value" id="sExpenses">0 kr</div></div>
+      <div class="stat"><div class="label">Til overs</div><div class="value" id="sLeft">0 kr</div></div>
+      <div class="stat"><div class="label">Økonomi-score</div><div class="value" id="sScore">–/100</div></div>
+    </div>
+
+    <div class="two">
+      <div class="card"><h2>🎯 Dette bør du gjøre</h2><div id="actions"></div></div>
+      <div class="card"><h2>📊 Denne måneden</h2><div id="breakdown"></div></div>
+    </div>
+  </section>
+
+  <section id="tx" class="page">
+    <h1>Penger</h1>
+    <p class="muted">Legg inn ekte inntekter og utgifter. De lagres lokalt på denne enheten.</p>
+
+    <div class="card">
+      <h2>➕ Legg til</h2>
+      <div class="form" aria-label="Legg til transaksjon">
+        <input id="tn" placeholder="Beskrivelse, f.eks. Kiwi" aria-label="Beskrivelse">
+        <input id="ta" type="number" min="0" step="0.01" placeholder="Beløp i kr" aria-label="Beløp">
+        <select id="tt" aria-label="Type">
+          <option value="expense">Utgift</option>
+          <option value="income">Inntekt</option>
+        </select>
+        <select id="tc" aria-label="Kategori">
+          <option>Mat</option><option>Bolig</option><option>Transport</option><option>Abonnement</option><option>Fritid</option><option>Helse</option><option>Annet</option>
+        </select>
+        <input id="td" type="date" aria-label="Dato">
+      </div>
+      <button class="primary" onclick="addTx()" type="button">Lagre transaksjon</button>
+    </div>
+
+    <div class="card">
+      <div class="row"><b>Transaksjoner</b><span class="tag" id="txCount">0</span></div>
+      <div id="txList"></div>
+    </div>
+  </section>
+
+  <section id="goals" class="page">
+    <h1>Mål</h1>
+    <div class="two">
+      <div class="card"><h2>🎯 Dine sparemål</h2><div id="goalList"></div></div>
+      <div class="card">
+        <h2>➕ Lag mål</h2>
+        <div class="form">
+          <input id="gn" placeholder="Hva sparer du til?" aria-label="Målnavn">
+          <input id="ga" type="number" min="1" placeholder="Målbeløp" aria-label="Målbeløp">
+        </div>
+        <button class="primary" onclick="addGoal()" type="button">Opprett mål</button>
+
+        <h2>🔮 Hva hvis?</h2>
+        <div class="form">
+          <input id="extra" type="number" value="1000" min="0" placeholder="Ekstra sparing/mnd" aria-label="Ekstra sparing">
+          <select id="yrs" aria-label="Antall år">
+            <option value="1">1 år</option>
+            <option value="3">3 år</option>
+            <option value="5" selected>5 år</option>
+            <option value="10">10 år</option>
+          </select>
+        </div>
+        <button class="primary" onclick="calc()" type="button">Beregn</button>
+        <p id="res" class="muted"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="coach" class="page">
+    <h1>AI-coach 🤖</h1>
+    <p class="muted">En enkel regelbasert coach i V1. Den bruker tallene du har lagt inn. Chatten lagres lokalt.</p>
+    <div class="card">
+      <div id="coachPane"></div>
+      <div id="typing" class="typing" style="display:none">AI skriver…</div>
+      <div class="coach-input">
+        <input id="coachInput" placeholder="Skriv til coachen (f.eks. 'Hvordan kan jeg spare mer?')" aria-label="Coachmelding">
+        <button class="primary" onclick="sendCoach()" type="button">Send</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="profile" class="page">
+    <h1>Profil</h1>
+    <div class="card">
+      <h2>⚙️ Månedlig budsjett</h2>
+      <div class="form">
+        <input id="budgetSaving" type="number" min="0" placeholder="Mål for sparing/mnd" aria-label="Sparing per måned">
+        <input id="budgetFun" type="number" min="0" placeholder="Maks fritid/mnd" aria-label="Fritid per måned">
+      </div>
+      <button class="primary" onclick="saveBudget()" type="button">Lagre innstillinger</button>
+      <p id="budgetMsg" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <h2>🔐 Data</h2>
+      <p class="muted">PengePilot V1 lagrer data i nettleserens localStorage. Dataene blir ikke sendt til en bank eller server.</p>
+      <div class="tx-actions">
+        <button class="button2" onclick="exportData()" type="button">Eksporter data</button>
+        <button class="button2" onclick="resetData()" type="button">Nullstill alt</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* --------- Data and utils --------- */
+const KEY = 'pengepilot_v1_data';
+const defaultData = { transactions: [], goals: [], settings: { saving: 0, fun: 0 }, coach: [] };
+
+function safeClone(obj){
+  if (typeof structuredClone === 'function') return structuredClone(obj);
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function load(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw) return JSON.parse(raw);
+    return safeClone(defaultData);
+  }catch(e){
+    return safeClone(defaultData);
+  }
+}
+
+function save(){
+  try{
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }catch(e){
+    console.error('Lagring feilet', e);
+  }
+  render();
+}
+
+let data = load();
+
+function uid(){
+  try{
+    if(window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  }catch(e){}
+  return Date.now().toString(36) + '-' + Math.floor(Math.random()*1e9).toString(36);
+}
+
+function kr(n){
+  const num = Number(n || 0);
+  // show up to 2 decimals if needed
+  return new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num) + ' kr';
+}
+
+function dateNow(){ return new Date().toISOString().slice(0,10); }
+
+function esc(s){ return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+function tab(id, b){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+  if(b) b.classList.add('active');
+  render();
+}
+
+function toast(s){
+  const x = document.getElementById('toast');
+  x.textContent = s;
+  x.style.display = 'block';
+  setTimeout(()=> x.style.display = 'none', 1800);
+}
+
+/* --------- Transactions & Goals --------- */
+function addTx(){
+  const name = document.getElementById('tn').value.trim();
+  const amount = parseFloat(document.getElementById('ta').value);
+  const type = document.getElementById('tt').value;
+  const cat = document.getElementById('tc').value;
+  const date = document.getElementById('td').value || dateNow();
+
+  if(!name || isNaN(amount) || amount <= 0){
+    toast('Skriv inn beskrivelse og beløp større enn 0');
+    return;
+  }
+  const tx = { id: uid(), name, amount: amount, type, cat, date };
+  // keep newest first
+  data.transactions.unshift(tx);
+  document.getElementById('tn').value = '';
+  document.getElementById('ta').value = '';
+  save();
+  toast('Transaksjon lagret');
+}
+
+function delTx(id){
+  data.transactions = data.transactions.filter(x => x.id !== id);
+  save();
+  toast('Transaksjon slettet');
+}
+
+function addGoal(){
+  const name = document.getElementById('gn').value.trim();
+  const target = Number(document.getElementById('ga').value);
+  if(!name || isNaN(target) || target <= 0){
+    toast('Fyll inn navn og målbeløp større enn 0');
+    return;
+  }
+  data.goals.push({ id: uid(), name, target: target, saved: 0 });
+  document.getElementById('gn').value = '';
+  document.getElementById('ga').value = '';
+  save();
+  toast('Mål opprettet');
+}
+
+function delGoal(id){
+  data.goals = data.goals.filter(x => x.id !== id);
+  save();
+  toast('Mål slettet');
+}
+
+/* --------- Calculations & settings --------- */
+function calc(){
+  const x = Number(document.getElementById('extra').value) || 0;
+  const y = Number(document.getElementById('yrs').value) || 0;
+  const r = 0.05 / 12;
+  const n = y * 12;
+  let f = 0;
+  if(r === 0) f = x * n;
+  else f = x * (Math.pow(1 + r, n) - 1) / r;
+  document.getElementById('res').textContent = 'Hvis du sparer ' + kr(x) + '/mnd, blir det ca. ' + kr(f) + ' etter ' + y + ' år (illustrasjon med 5 % årlig avkastning).';
+}
+
+function saveBudget(){
+  data.settings.saving = Number(document.getElementById('budgetSaving').value) || 0;
+  data.settings.fun = Number(document.getElementById('budgetFun').value) || 0;
+  save();
+  document.getElementById('budgetMsg').textContent = 'Innstillinger lagret.';
+  toast('Innstillinger lagret');
+}
+
+function totals(){
+  const income = data.transactions.filter(x=>x.type==='income').reduce((s,x)=>s + Number(x.amount),0);
+  const expenses = data.transactions.filter(x=>x.type==='expense').reduce((s,x)=>s + Number(x.amount),0);
+  return { income, expenses, left: income - expenses };
+}
+
+function score(t){
+  if(!t.income) return 0;
+  const rate = t.left / t.income;
+  let s = 50 + rate * 100;
+  if(data.settings.saving > 0 && t.left >= data.settings.saving) s += 15;
+  if(t.left < 0) s -= 25;
+  return Math.max(0, Math.min(100, Math.round(s)));
+}
+
+/* --------- Rendering --------- */
+function render(){
+  const t = totals();
+  document.getElementById('sIncome').textContent = kr(t.income);
+  document.getElementById('sExpenses').textContent = kr(t.expenses);
+  document.getElementById('sLeft').textContent = kr(t.left);
+  document.getElementById('sScore').textContent = t.income ? score(t) + '/100' : '–/100';
+
+  // Breakdown by category (expenses only)
+  const by = {};
+  data.transactions.filter(x => x.type === 'expense').forEach(x => by[x.cat] = (by[x.cat] || 0) + Number(x.amount));
+  const breakdownEl = document.getElementById('breakdown');
+  const cats = Object.entries(by);
+  if(cats.length){
+    cats.sort((a,b)=>b[1]-a[1]);
+    breakdownEl.innerHTML = cats.map(([c,v]) => `<div class="row"><div>${esc(c)}</div><div><b>${kr(v)}</b></div></div>`).join('');
+  }else{
+    breakdownEl.innerHTML = '<div class="empty">Ingen utgifter registrert ennå.</div>';
+  }
+
+  // Actions / suggestions
+  const a = [];
+  if(!t.income) a.push(['warn','Legg inn inntekten din','Start med lønn, stipend eller andre faste inntekter.']);
+  if(t.left < 0) a.push(['bad','Budsjettet går i minus','Du har brukt mer enn registrert inntekt. Se på variable kostnader først.']);
+  if(data.settings.saving > 0 && t.left < data.settings.saving) a.push(['warn','Sparingen er ikke dekket','Målet ditt er ' + kr(data.settings.saving) + '/mnd, men du har bare ' + kr(Math.max(0,t.left)) + ' igjen.']);
+  const fun = by['Fritid'] || 0;
+  if(data.settings.fun > 0 && fun > data.settings.fun) a.push(['warn','Fritid er over grensen','Du har brukt ' + kr(fun) + ' på fritid. Grensen din er ' + kr(data.settings.fun) + '.']);
+  if(t.left > 0 && t.income && a.length < 3) a.push(['good','Du har penger igjen','Flytt en del av ' + kr(t.left) + ' til buffer eller et konkret sparemål.']);
+  if(!a.length) a.push(['good','Start med noen transaksjoner','Når du legger inn tall, gir PengePilot konkrete forslag.']);
+  document.getElementById('actions').innerHTML = a.map(x=>`<div class="action ${x[0]}"><b>${esc(x[1])}</b><p class="muted">${esc(x[2])}</p></div>`).join('');
+
+  // Transactions list
+  const list = document.getElementById('txList');
+  document.getElementById('txCount').textContent = data.transactions.length;
+  if(!data.transactions.length){
+    list.innerHTML = '<div class="empty">Ingen transaksjoner ennå. Legg inn den første ovenfor.</div>';
+  }else{
+    // ensure stable copy sorted by date or insertion order (we already unshift newest)
+    list.innerHTML = data.transactions.map(x => `
+      <div class="row" data-id="${esc(x.id)}">
+        <div style="max-width:70%">
+          ${x.type === 'income' ? '💰' : '💸'} ${esc(x.name)} <span class="tag">${esc(x.cat)}</span>
+          <div class="small">${esc(x.date)}</div>
+        </div>
+        <div style="text-align:right;min-width:130px">
+          <div><b>${x.type === 'income' ? '+' : '−'}${kr(x.amount)}</b></div>
+          <div><button type="button" class="delete" data-id="${esc(x.id)}">Slett</button></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Goals list
+  const gl = document.getElementById('goalList');
+  if(!data.goals.length){
+    gl.innerHTML = '<div class="empty">Ingen mål ennå.</div>';
+  }else{
+    gl.innerHTML = data.goals.map(g => {
+      const p = Math.min(100, g.target ? (g.saved / g.target * 100) : 0);
+      return `<div class="goal-card" data-id="${esc(g.id)}">
+        <div class="row">
+          <div><b>${esc(g.name)}</b></div>
+          <div><button type="button" class="delete" data-id="${esc(g.id)}">Slett</button></div>
+        </div>
+        <p class="muted">${kr(g.saved)} / ${kr(g.target)}</p>
+        <div class="progress"><div style="width:${p}%"></div></div>
+        <p class="small">${Math.round(p)} % fullført</p>
+      </div>`;
+    }).join('');
+  }
+
+  // Coach pane
+  renderCoach();
+
+  // populate settings inputs unless user is typing
+  if(document.activeElement?.id !== 'budgetSaving') document.getElementById('budgetSaving').value = data.settings.saving || '';
+  if(document.activeElement?.id !== 'budgetFun') document.getElementById('budgetFun').value = data.settings.fun || '';
+}
+
+/* --------- Coach (simple rule-based) --------- */
+function renderCoach(){
+  const pane = document.getElementById('coachPane');
+  if(!pane) return;
+  if(!Array.isArray(data.coach)) data.coach = [];
+  if(!data.coach.length){
+    pane.innerHTML = '<div class="empty">Ingen samtaler ennå. Spør coachen om råd — f.eks. «Hvordan kan jeg spare mer?»</div>';
+    return;
+  }
+  pane.innerHTML = data.coach.map(m => {
+    const cls = m.role === 'assistant' ? 'chat ai' : 'chat user';
+    return `<div class="${cls}"><div>${esc(m.text)}</div><div class="small">${new Date(m.ts).toLocaleString()}</div></div>`;
+  }).join('');
+  pane.scrollTop = pane.scrollHeight;
+}
+
+function showTyping(on){
+  const t = document.getElementById('typing');
+  if(!t) return;
+  t.style.display = on ? 'block' : 'none';
+}
+
+function sendCoach(){
+  const inp = document.getElementById('coachInput');
+  if(!inp) return;
+  const text = inp.value.trim();
+  if(!text){ toast('Skriv en melding til coachen'); return; }
+  const msg = { id: uid(), role: 'user', text, ts: Date.now() };
+  data.coach.push(msg);
+  save();
+  inp.value = '';
+  showTyping(true);
+  setTimeout(()=> generateCoachReply(text), 800 + Math.random()*900);
+}
+
+function generateCoachReply(userText){
+  const t = totals();
+  const goals = data.goals || [];
+  const ut = userText.toLowerCase();
+  const replies = [];
+
+  if(/spare|sparing|spar/i.test(ut)){
+    replies.push('For sparing: sett av et fast beløp hver måned til en egen konto eller mål. Prioriter det som en «fast kostnad».');
+    if(data.settings.saving > 0) replies.push('Du har satt et sparemål på ' + kr(data.settings.saving) + '/mnd. Vurder automatisk overføring rett etter lønn.');
+  }
+  if(/budsjett|budsjettet|utgift|utgifter|kostnad/i.test(ut)){
+    replies.push('Gå gjennom de største utgiftskategoriene først (se oversikten). Vil du at jeg skal foreslå konkrete kutteråd for Mat eller Fritid?');
+  }
+  if(/mål|målene|sparemål/i.test(ut)){
+    if(goals.length === 0) replies.push('Du har ingen opprettede mål. Opprett et mål under Mål-fanen, så kan jeg hjelpe med sparerutiner.');
+    else{
+      replies.push('Du har ' + goals.length + ' mål. Prioritér ett mål først og sett et månedlig sparingsbeløp mot det.');
+      const incomplete = goals.filter(g => g.saved < g.target);
+      if(incomplete.length) replies.push('Første mål å jobbe mot: ' + incomplete[0].name + ' — ' + kr(incomplete[0].target - incomplete[0].saved) + ' igjen.');
+    }
+  }
+
+  if(/hvordan|hva|status|fremgang|how|status|doing/i.test(ut)){
+    if(!t.income) replies.push('Jeg ser ingen registrert inntekt. Legg inn inntekt under Penger for at jeg skal gi bedre råd.');
+    else{
+      replies.push('Du har registrert ' + kr(t.income) + ' i inntekt og ' + kr(t.expenses) + ' i utgifter denne måneden. Du sitter igjen med ' + kr(t.left) + '.');
+      if(t.left < 0) replies.push('Budsjettet er i minus — prioriter å redusere variable kostnader denne måneden.');
+      else replies.push('Bra! Vurder å sette ' + kr(Math.round(t.left*0.5)) + ' til buffer og resten til sparing eller mål.');
+    }
+  }
+
+  if(replies.length === 0){
+    if(!t.income) replies.push('Hei! Start med å registrere inntekt og et par utgifter, så kan jeg gi konkrete råd.');
+    else if(t.left < 0) replies.push('Du bruker mer enn du tjener. Gå gjennom variable utgifter (Mat, Fritid, Transport) og se hvor du kan kutte.');
+    else replies.push('Fortell meg hva du ønsker hjelp med: spare mer, kutte utgifter, eller sette opp mål.');
+  }
+
+  const replyText = replies.slice(0,2).join(' ');
+  const aiMsg = { id: uid(), role: 'assistant', text: replyText, ts: Date.now() };
+  data.coach.push(aiMsg);
+  save();
+  showTyping(false);
+}
+
+/* Enter key to send */
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && document.getElementById('coachInput') === document.activeElement){
+    e.preventDefault();
+    sendCoach();
+  }
+});
+
+/* --------- Export & Reset --------- */
+function exportData(){
+  try{
+    const now = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pengepilot-data-${now}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=> URL.revokeObjectURL(url), 1000);
+  }catch(e){
+    toast('Eksport feilet');
+    console.error(e);
+  }
+}
+
+function resetData(){
+  if(confirm('Er du sikker? Alle PengePilot-data på denne enheten slettes.')){
+    data = safeClone(defaultData);
+    save();
+    toast('Alt er nullstilt');
+  }
+}
+
+/* --------- Event delegation for deletes --------- */
+document.addEventListener('click', (e) => {
+  const del = e.target.closest('.delete');
+  if(!del) return;
+  const id = del.dataset.id;
+  if(!id) return;
+  // If delete is inside txList -> tx deletion
+  if(del.closest('#txList')) {
+    delTx(id);
+    return;
+  }
+  // If delete is inside goalList -> goal deletion
+  if(del.closest('#goalList')) {
+    delGoal(id);
+    return;
+  }
+});
+
+/* --------- Init --------- */
+document.getElementById('td').value = dateNow();
+render();
+</script>
+</body>
+</html>
