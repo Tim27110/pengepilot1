@@ -1,0 +1,29 @@
+{
+  "name": "pengepilot",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "next": "14.2.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@prisma/client": "5.10.0",
+    "zod": "4.25.1"
+  },
+  "devDependencies": {
+    "prisma": "5.10.0",
+    "typescript": "5.2.2",
+    "vitest": "1.0.0",
+    "eslint": "8.52.0",
+    "@types/node": "20.5.1",
+    "@types/react": "18.2.21"
+  }
+}
