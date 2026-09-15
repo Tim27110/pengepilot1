@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111315">
+<meta name="description" content="PengePilot V2 — personlig økonomi-app med arkitektur for Open Banking">
+<title>PengePilot</title>
+<base href="./">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5f7;color:#17191c;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.app{max-width:1050px;margin:auto;padding:16px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;border-bottom:1px solid #e0e2e5;padding-bottom:16px}
+.logo{font-size:20px;font-weight:700;letter-spacing:-0.5px}
+.pill{background:#e0e2e5;color:#565a62;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;text-transform:uppercase}
+nav{display:flex;gap:8px;margin-bottom:24px;border-bottom:2px solid #e0e2e5}
+nav button{background:none;border:none;padding:12px 16px;cursor:pointer;font-size:14px;font-weight:500;color:#565a62;border-bottom:3px solid transparent;transition:all 0.2s}
+nav button:hover{color:#17191c}
+nav button.active{color:#0052cc;border-bottom-color:#0052cc}
+.page{display:none}
+.page.active{display:block}
+h1{font-size:28px;margin:0 0 8px 0;font-weight:700}
+h2{font-size:16px;margin:0 0 12px 0;font-weight:600}
+p{margin:0;line-height:1.5}
+.muted{color:#565a62;font-size:14px}
+.card{background:#fff;border:1px solid #e0e2e5;border-radius:8px;padding:16px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;margin-bottom:24px}
+.stat{background:#fff;border:1px solid #e0e2e5;border-radius:8px;padding:16px}
+.stat .label{color:#565a62;font-size:12px;font-weight:600;text-transform:uppercase;margin-bottom:8px}
+.stat .value{font-size:24px;font-weight:700;color:#0052cc}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #e0e2e5}
+.row:last-child{border-bottom:none}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.form input,.form select{padding:10px 12px;border:1px solid #d0d2d7;border-radius:6px;font-size:14px;font-family:inherit}
+.form input:focus,.form select:focus{outline:none;border-color:#0052cc;box-shadow:0 0 0 3px rgba(0,82,204,0.1)}
+.tag{display:inline-block;background:#f0f1f3;color:#565a62;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:500}
+.button2{background:#f0f1f3;color:#17191c;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s}
+.button2:hover{background:#e0e2e5}
+.primary{background:#0052cc;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;transition:all 0.2s}
+.primary:hover{background:#003d99}
+.primary:active{background:#002966}
+.action{background:#f0f1f3;border-left:4px solid #0052cc;padding:12px;margin-bottom:12px;border-radius:4px}
+.action.warn{border-left-color:#f77f00}
+.action.bad{border-left-color:#d62828}
+.action.good{border-left-color:#2a9d8f}
+.action b{display:block;margin-bottom:4px}
+.empty{color:#565a62;font-style:italic;padding:16px;text-align:center}
+.delete{background:#e0e2e5;color:#17191c;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600}
+.delete:hover{background:#d0d2d7}
+.small{font-size:12px;color:#565a62;margin-top:4px}
+.progress{background:#e0e2e5;height:6px;border-radius:3px;overflow:hidden}
+.progress>div{background:#2a9d8f;height:100%;transition:width 0.3s}
+.goal-card{background:#f9f9fb;border:1px solid #e0e2e5;border-radius:8px;padding:12px;margin-bottom:12px}
+.coach-input{display:flex;gap:8px;margin-top:12px}
+.coach-input input{flex:1}
+.chat{padding:12px;margin-bottom:8px;border-radius:6px;max-width:80%}
+.chat.user{background:#0052cc;color:#fff;margin-left:auto}
+.chat.ai{background:#f0f1f3;color:#17191c}
+.typing{color:#565a62;font-style:italic;padding:12px}
+.toast{position:fixed;bottom:16px;left:16px;background:#17191c;color:#fff;padding:12px 16px;border-radius:6px;font-size:14px;display:none;z-index:999}
+.section-title{font-size:12px;font-weight:700;color:#565a62;text-transform:uppercase;margin:16px 0 8px 0;letter-spacing:0.5px}
+.bank-connect{background:#f9f9fb;border:2px dashed #d0d2d7;border-radius:8px;padding:16px;text-align:center}
+.bank-connect-icon{font-size:32px;margin-bottom:8px}
+.demo-badge{background:#fff3cd;border:1px solid #ffc107;color:#856404;padding:8px 12px;border-radius:4px;font-size:12px;margin:12px 0}
+@media(max-width:750px){.grid{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.form{grid-template-columns:1fr}}
+@media(max-width:480px){.app{padding:12px}.form{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.top{flex-direction:column;gap:12px;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="logo">PengePilot</div>
+    <div class="pill">V2 • ARKITEKTUR KLAR</div>
+  </div>
+
+  <nav>
+    <button class="active" onclick="tab('home',this)" type="button">Oversikt</button>
+    <button onclick="tab('tx',this)" type="button">Transaksjoner</button>
+    <button onclick="tab('goals',this)" type="button">Mål</button>
+    <button onclick="tab('bank',this)" type="button">Bank</button>
+    <button onclick="tab('coach',this)" type="button">Analyse</button>
+    <button onclick="tab('profile',this)" type="button">Innstillinger</button>
+  </nav>
+
+  <section id="home" class="page active">
+    <h1>Din økonomi</h1>
+    <p class="muted">Basert på transaksjoner du har registrert. Når banktilkobling er klar, oppdateres disse automatisk.</p>
+
+    <div class="grid">
+      <div class="stat"><div class="label">Inntekt</div><div class="value" id="sIncome">0 kr</div></div>
+      <div class="stat"><div class="label">Utgifter</div><div class="value" id="sExpenses">0 kr</div></div>
+      <div class="stat"><div class="label">Til overs</div><div class="value" id="sLeft">0 kr</div></div>
+      <div class="stat"><div class="label">Score</div><div class="value" id="sScore">–/100</div></div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <h2>Anbefalinger</h2>
+        <div id="actions"></div>
+      </div>
+      <div class="card">
+        <h2>Utgifter per kategori</h2>
+        <div id="breakdown"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="tx" class="page">
+    <h1>Transaksjoner</h1>
+    <p class="muted">Registrer inntekter og utgifter. Data lagres lokalt i din nettleser.</p>
+
+    <div class="card">
+      <h2>Legg til transaksjon</h2>
+      <div class="form">
+        <input id="tn" placeholder="Beskrivelse" aria-label="Beskrivelse">
+        <input id="ta" type="number" min="0" step="0.01" placeholder="Beløp" aria-label="Beløp">
+        <select id="tt" aria-label="Type">
+          <option value="expense">Utgift</option>
+          <option value="income">Inntekt</option>
+        </select>
+        <select id="tc" aria-label="Kategori">
+          <option>Mat</option>
+          <option>Bolig</option>
+          <option>Transport</option>
+          <option>Abonnement</option>
+          <option>Fritid</option>
+          <option>Helse</option>
+          <option>Annet</option>
+        </select>
+        <input id="td" type="date" aria-label="Dato">
+        <div></div>
+      </div>
+      <button class="primary" onclick="addTx()" type="button">Lagre</button>
+    </div>
+
+    <div class="card">
+      <div class="row"><b>Transaksjoner</b><span class="tag" id="txCount">0</span></div>
+      <div id="txList"></div>
+    </div>
+  </section>
+
+  <section id="goals" class="page">
+    <h1>Sparemål</h1>
+    <div class="two">
+      <div class="card">
+        <h2>Dine mål</h2>
+        <div id="goalList"></div>
+      </div>
+      <div class="card">
+        <h2>Opprett mål</h2>
+        <div class="form">
+          <input id="gn" placeholder="Målnavn" aria-label="Målnavn">
+          <input id="ga" type="number" min="1" placeholder="Målbeløp" aria-label="Målbeløp">
+        </div>
+        <button class="primary" onclick="addGoal()" type="button">Opprett</button>
+
+        <div class="section-title" style="margin-top:24px">Spareberegning</div>
+        <div class="form">
+          <input id="extra" type="number" value="1000" min="0" placeholder="Månedlig sparing">
+          <select id="yrs" aria-label="År">
+            <option value="1">1 år</option>
+            <option value="3">3 år</option>
+            <option value="5" selected>5 år</option>
+            <option value="10">10 år</option>
+          </select>
+        </div>
+        <button class="primary" onclick="calc()" type="button">Beregn</button>
+        <p id="res" class="muted"></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="bank" class="page">
+    <h1>Banktilkobling</h1>
+    <p class="muted">Her vil du kunne koble banken din når funksjonen er klar.</p>
+
+    <div class="bank-connect">
+      <div class="bank-connect-icon">🔗</div>
+      <h2>Banktilkobling kommer snart</h2>
+      <p class="muted">PengePilot er under utvikling. Når Open Banking-integrasjonen er ferdig, kan du koble banken din her og få automatisk synkronisering av transaksjoner.</p>
+      <p class="muted" style="margin-top:12px">Inntil da bruker appen testdata og manuell registrering.</p>
+    </div>
+
+    <div class="demo-badge">
+      Testdata fra Demo Bank er lastet inn. Du kan se hvordan appen fungerer med realistiske transaksjoner.
+    </div>
+
+    <div class="card">
+      <h2>Om banktilkobling</h2>
+      <p class="muted">Når integrasjonen lanseres, vil den bygge på Open Banking (PSD2) og være sikker, godkjent og privat. PengePilot vil aldri lagre ditt passord eller bankdata direkte.</p>
+    </div>
+
+    <div class="card">
+      <h2>Demo-data</h2>
+      <button class="button2" onclick="loadDemoData()" type="button">Last inn testdata</button>
+      <button class="button2" onclick="clearDemoData()" type="button">Fjern testdata</button>
+    </div>
+  </section>
+
+  <section id="coach" class="page">
+    <h1>Økonomi-analyse</h1>
+    <p class="muted">Chat med analysen. Den bruker dine økonomiske tall for å gi råd.</p>
+    <div class="card">
+      <div id="coachPane"></div>
+      <div id="typing" class="typing" style="display:none">Analyserer...</div>
+      <div class="coach-input">
+        <input id="coachInput" placeholder="Spør: Hvordan kan jeg spare mer?" aria-label="Analysespørsmål">
+        <button class="primary" onclick="sendCoach()" type="button">Send</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="profile" class="page">
+    <h1>Innstillinger</h1>
+    <div class="card">
+      <h2>Sparemål per måned</h2>
+      <div class="form">
+        <input id="budgetSaving" type="number" min="0" placeholder="Målbeløp">
+        <input id="budgetFun" type="number" min="0" placeholder="Fritid-grense">
+      </div>
+      <button class="primary" onclick="saveBudget()" type="button">Lagre</button>
+      <p id="budgetMsg" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <h2>Data</h2>
+      <p class="muted">PengePilot lagrer data lokalt i nettleseren din. Ingen data sendes til server uten din tillatelse.</p>
+      <div class="tx-actions" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="button2" onclick="exportData()" type="button">Eksporter</button>
+        <button class="button2" onclick="resetData()" type="button">Nullstill alt</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Om PengePilot V2</h2>
+      <p class="muted">Versjon 2 er bygget med arkitektur for Open Banking-integrasjon. Dette betyr at når banktilkobling er implementert, vil den passe perfekt inn i systemet uten at appen tren[...]</p>
+    </div>
+  </section>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ========== DATA LAYER ==========
+const KEY = 'pengepilot_v2_data';
+const defaultData = {
+  transactions: [],
+  goals: [],
+  settings: { saving: 0, fun: 0 },
+  coach: [],
+  bankConnections: [],
+  version: 'v2'
+};
+
+function safeClone(obj) {
+  if (typeof structuredClone === 'function') return structuredClone(obj);
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) return JSON.parse(raw);
+    return safeClone(defaultData);
+  } catch (e) {
+    return safeClone(defaultData);
+  }
+}
+
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error('Lagring feilet', e);
+  }
+  render();
+}
+
+let data = load();
+
+// ========== UTILS ==========
+function uid() {
+  try {
+    if (window.crypto && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch (e) {}
+  return Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e9).toString(36);
+}
+
+function kr(n) {
+  const num = Number(n || 0);
+  return new Intl.NumberFormat('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(num) + ' kr';
+}
+
+function dateNow() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
+}
+
+function tab(id, b) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('nav button').forEach(x => x.classList.remove('active'));
+  if (b) b.classList.add('active');
+  render();
+}
+
+function toast(s) {
+  const x = document.getElementById('toast');
+  x.textContent = s;
+  x.style.display = 'block';
+  setTimeout(() => x.style.display = 'none', 1800);
+}
+
+// ========== TRANSACTIONS & GOALS ==========
+function addTx() {
+  const name = document.getElementById('tn').value.trim();
+  const amount = parseFloat(document.getElementById('ta').value);
+  const type = document.getElementById('tt').value;
+  const cat = document.getElementById('tc').value;
+  const date = document.getElementById('td').value || dateNow();
+
+  if (!name || isNaN(amount) || amount <= 0) {
+    toast('Fyll inn beskrivelse og beløp');
+    return;
+  }
+
+  const tx = { id: uid(), name, amount, type, cat, date, createdAt: Date.now() };
+  data.transactions.unshift(tx);
+  document.getElementById('tn').value = '';
+  document.getElementById('ta').value = '';
+  save();
+  toast('Transaksjon lagret');
+}
+
+function delTx(id) {
+  data.transactions = data.transactions.filter(x => x.id !== id);
+  save();
+  toast('Transaksjon slettet');
+}
+
+function addGoal() {
+  const name = document.getElementById('gn').value.trim();
+  const target = Number(document.getElementById('ga').value);
+  if (!name || isNaN(target) || target <= 0) {
+    toast('Fyll inn navn og beløp');
+    return;
+  }
+  data.goals.push({ id: uid(), name, target, saved: 0 });
+  document.getElementById('gn').value = '';
+  document.getElementById('ga').value = '';
+  save();
+  toast('Mål opprettet');
+}
+
+function delGoal(id) {
+  data.goals = data.goals.filter(x => x.id !== id);
+  save();
+  toast('Mål slettet');
+}
+
+// ========== CALCULATIONS ==========
+function calc() {
+  const x = Number(document.getElementById('extra').value) || 0;
+  const y = Number(document.getElementById('yrs').value) || 0;
+  const r = 0.05 / 12;
+  const n = y * 12;
+  let f = 0;
+  if (r === 0) f = x * n;
+  else f = x * (Math.pow(1 + r, n) - 1) / r;
+  document.getElementById('res').textContent = 'Med ' + kr(x) + '/mnd blir det ca. ' + kr(f) + ' etter ' + y + ' år (5% årlig avkastning).';
+}
+
+function saveBudget() {
+  data.settings.saving = Number(document.getElementById('budgetSaving').value) || 0;
+  data.settings.fun = Number(document.getElementById('budgetFun').value) || 0;
+  save();
+  document.getElementById('budgetMsg').textContent = 'Lagret.';
+  toast('Innstillinger lagret');
+}
+
+function totals() {
+  const income = data.transactions.filter(x => x.type === 'income').reduce((s, x) => s + Number(x.amount), 0);
+  const expenses = data.transactions.filter(x => x.type === 'expense').reduce((s, x) => s + Number(x.amount), 0);
+  return { income, expenses, left: income - expenses };
+}
+
+function score(t) {
+  if (!t.income) return 0;
+  const rate = t.left / t.income;
+  let s = 50 + rate * 100;
+  if (data.settings.saving > 0 && t.left >= data.settings.saving) s += 15;
+  if (t.left < 0) s -= 25;
+  return Math.max(0, Math.min(100, Math.round(s)));
+}
+
+// ========== RENDERING ==========
+function render() {
+  const t = totals();
+  document.getElementById('sIncome').textContent = kr(t.income);
+  document.getElementById('sExpenses').textContent = kr(t.expenses);
+  document.getElementById('sLeft').textContent = kr(t.left);
+  document.getElementById('sScore').textContent = t.income ? score(t) + '/100' : '–/100';
+
+  // Breakdown
+  const by = {};
+  data.transactions.filter(x => x.type === 'expense').forEach(x => by[x.cat] = (by[x.cat] || 0) + Number(x.amount));
+  const breakdownEl = document.getElementById('breakdown');
+  const cats = Object.entries(by);
+  if (cats.length) {
+    cats.sort((a, b) => b[1] - a[1]);
+    breakdownEl.innerHTML = cats.map(([c, v]) => `<div class="row"><div>${esc(c)}</div><div><b>${kr(v)}</b></div></div>`).join('');
+  } else {
+    breakdownEl.innerHTML = '<div class="empty">Ingen utgifter ennå</div>';
+  }
+
+  // Actions
+  const a = [];
+  if (!t.income) a.push(['warn', 'Legg inn inntekt', 'Start med lønn eller andre faste inntekter.']);
+  if (t.left < 0) a.push(['bad', 'Budsjettet er i minus', 'Se på variable utgifter.']);
+  if (data.settings.saving > 0 && t.left < data.settings.saving) a.push(['warn', 'Sparemål ikke dekket', 'Du mangler ' + kr(data.settings.saving - t.left) + '.']);
+  const fun = by['Fritid'] || 0;
+  if (data.settings.fun > 0 && fun > data.settings.fun) a.push(['warn', 'Fritid over grensen', 'Du har brukt ' + kr(fun - data.settings.fun) + ' for mye.']);
+  if (t.left > 0 && t.income && a.length < 3) a.push(['good', 'Du har penger igjen', 'Sett ' + kr(Math.round(t.left * 0.5)) + ' til sparing.']);
+  if (!a.length) a.push(['good', 'Legg inn transaksjoner', 'Start med å registrere inntekt og utgifter.']);
+  document.getElementById('actions').innerHTML = a.map(x => `<div class="action ${x[0]}"><b>${esc(x[1])}</b><p class="muted">${esc(x[2])}</p></div>`).join('');
+
+  // Transactions
+  const list = document.getElementById('txList');
+  document.getElementById('txCount').textContent = data.transactions.length;
+  if (!data.transactions.length) {
+    list.innerHTML = '<div class="empty">Ingen transaksjoner</div>';
+  } else {
+    list.innerHTML = data.transactions.map(x => `
+      <div class="row" data-id="${esc(x.id)}">
+        <div style="max-width:70%">
+          <strong>${esc(x.name)}</strong> <span class="tag">${esc(x.cat)}</span>
+          <div class="small">${esc(x.date)}</div>
+        </div>
+        <div style="text-align:right">
+          <div><b>${x.type === 'income' ? '+' : '−'}${kr(x.amount)}</b></div>
+          <button type="button" class="delete" data-id="${esc(x.id)}">Slett</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // Goals
+  const gl = document.getElementById('goalList');
+  if (!data.goals.length) {
+    gl.innerHTML = '<div class="empty">Ingen mål ennå</div>';
+  } else {
+    gl.innerHTML = data.goals.map(g => {
+      const p = Math.min(100, g.target ? (g.saved / g.target * 100) : 0);
+      return `<div class="goal-card" data-id="${esc(g.id)}">
+        <div class="row">
+          <div><b>${esc(g.name)}</b></div>
+          <button type="button" class="delete" data-id="${esc(g.id)}">Slett</button>
+        </div>
+        <p class="muted">${kr(g.saved)} / ${kr(g.target)}</p>
+        <div class="progress"><div style="width:${p}%"></div></div>
+        <p class="small">${Math.round(p)}% fullført</p>
+      </div>`;
+    }).join('');
+  }
+
+  renderCoach();
+
+  if (document.activeElement?.id !== 'budgetSaving') document.getElementById('budgetSaving').value = data.settings.saving || '';
+  if (document.activeElement?.id !== 'budgetFun') document.getElementById('budgetFun').value = data.settings.fun || '';
+}
+
+// ========== COACH ==========
+function renderCoach() {
+  const pane = document.getElementById('coachPane');
+  if (!pane) return;
+  if (!Array.isArray(data.coach)) data.coach = [];
+  if (!data.coach.length) {
+    pane.innerHTML = '<div class="empty">Ingen samtaler ennå</div>';
+    return;
+  }
+  pane.innerHTML = data.coach.map(m => {
+    const cls = m.role === 'assistant' ? 'chat ai' : 'chat user';
+    return `<div class="${cls}"><div>${esc(m.text)}</div><div class="small">${new Date(m.ts).toLocaleString()}</div></div>`;
+  }).join('');
+  pane.scrollTop = pane.scrollHeight;
+}
+
+function showTyping(on) {
+  const t = document.getElementById('typing');
+  if (!t) return;
+  t.style.display = on ? 'block' : 'none';
+}
+
+function sendCoach() {
+  const inp = document.getElementById('coachInput');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) {
+    toast('Skriv en melding');
+    return;
+  }
+  const msg = { id: uid(), role: 'user', text, ts: Date.now() };
+  data.coach.push(msg);
+  save();
+  inp.value = '';
+  showTyping(true);
+  setTimeout(() => generateCoachReply(text), 800 + Math.random() * 900);
+}
+
+function generateCoachReply(userText) {
+  const t = totals();
+  const goals = data.goals || [];
+  const ut = userText.toLowerCase();
+  const replies = [];
+
+  if (/spare|sparing|spar/i.test(ut)) {
+    replies.push('Sett av et fast beløp hver måned. Gjør det til en prioritet som en fast kostnad.');
+    if (data.settings.saving > 0) replies.push('Du har sparemål på ' + kr(data.settings.saving) + '/mnd. Vurder automatisk overføring rett etter lønn.');
+  }
+  if (/budsjett|utgift|kostnad/i.test(ut)) {
+    replies.push('Se på de største kategoriene først. Hva kan du kutte?');
+  }
+  if (/mål|sparemål/i.test(ut)) {
+    if (goals.length === 0) replies.push('Opprett et mål under Mål-fanen.');
+    else {
+      replies.push('Du har ' + goals.length + ' mål. Fokuser på ett først.');
+      const incomplete = goals.filter(g => g.saved < g.target);
+      if (incomplete.length) replies.push(incomplete[0].name + ': ' + kr(incomplete[0].target - incomplete[0].saved) + ' igjen.');
+    }
+  }
+
+  if (/hvordan|hva|status/i.test(ut)) {
+    if (!t.income) replies.push('Legg inn inntekt først.');
+    else {
+      replies.push('Inntekt: ' + kr(t.income) + '. Utgifter: ' + kr(t.expenses) + '. Igjen: ' + kr(t.left) + '.');
+      if (t.left < 0) replies.push('Du er i minus. Kutt variable kostnader.');
+      else replies.push('Bra! Sett ' + kr(Math.round(t.left * 0.5)) + ' til sparing.');
+    }
+  }
+
+  if (replies.length === 0) {
+    replies.push('Spør meg om sparing, budsjett, eller mål. Jeg bruker tallene dine til å gi konkrete råd.');
+  }
+
+  const replyText = replies.slice(0, 2).join(' ');
+  const aiMsg = { id: uid(), role: 'assistant', text: replyText, ts: Date.now() };
+  data.coach.push(aiMsg);
+  save();
+  showTyping(false);
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('coachInput') === document.activeElement) {
+    e.preventDefault();
+    sendCoach();
+  }
+});
+
+// ========== DEMO DATA (Demo Bank Provider) ==========
+function loadDemoData() {
+  if (data.transactions.length > 0) {
+    if (!confirm('Overskrive eksisterende data?')) return;
+    data.transactions = [];
+  }
+
+  const demoTx = [
+    { name: 'Lønn', type: 'income', cat: 'Inntekt', amount: 25000, date: '2026-09-01' },
+    { name: 'Husleie', type: 'expense', cat: 'Bolig', amount: 8500, date: '2026-09-01' },
+    { name: 'Kiwi', type: 'expense', cat: 'Mat', amount: 542, date: '2026-09-02' },
+    { name: 'Rema 1000', type: 'expense', cat: 'Mat', amount: 687, date: '2026-09-03' },
+    { name: 'Spotify', type: 'expense', cat: 'Abonnement', amount: 139, date: '2026-09-05' },
+    { name: 'NSB togbillett', type: 'expense', cat: 'Transport', amount: 450, date: '2026-09-06' },
+    { name: 'Helsestudio', type: 'expense', cat: 'Helse', amount: 399, date: '2026-09-08' },
+    { name: 'Netflix', type: 'expense', cat: 'Abonnement', amount: 199, date: '2026-09-10' },
+    { name: 'Kiwi', type: 'expense', cat: 'Mat', amount: 612, date: '2026-09-12' },
+    { name: 'Taxi', type: 'expense', cat: 'Transport', amount: 340, date: '2026-09-14' },
+    { name: 'Kinosess', type: 'expense', cat: 'Fritid', amount: 139, date: '2026-09-15' },
+    { name: 'Apple Music', type: 'expense', cat: 'Abonnement', amount: 99, date: '2026-09-17' },
+    { name: 'Kiwi', type: 'expense', cat: 'Mat', amount: 498, date: '2026-09-19' },
+    { name: 'Drikke med venner', type: 'expense', cat: 'Fritid', amount: 250, date: '2026-09-20' },
+    { name: 'Tannlege', type: 'expense', cat: 'Helse', amount: 600, date: '2026-09-22' },
+    { name: 'Bensin', type: 'expense', cat: 'Transport', amount: 425, date: '2026-09-24' },
+    { name: 'Rema 1000', type: 'expense', cat: 'Mat', amount: 721, date: '2026-09-25' },
+    { name: 'Klær', type: 'expense', cat: 'Annet', amount: 890, date: '2026-09-27' },
+    { name: 'Kiwi', type: 'expense', cat: 'Mat', amount: 534, date: '2026-09-29' }
+  ];
+
+  data.transactions = demoTx.map(t => ({
+    id: uid(),
+    ...t,
+    createdAt: Date.now()
+  }));
+
+  save();
+  toast('Testdata lastet inn fra Demo Bank');
+}
+
+function clearDemoData() {
+  if (confirm('Slett all data?')) {
+    data.transactions = [];
+    data.goals = [];
+    data.coach = [];
+    save();
+    toast('Data slettet');
+  }
+}
+
+// ========== EXPORT & RESET ==========
+function exportData() {
+  try {
+    const now = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pengepilot-data-${now}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Data eksportert');
+  } catch (e) {
+    toast('Eksport feilet');
+  }
+}
+
+function resetData() {
+  if (confirm('Slett all PengePilot-data? Dette kan ikke angres.')) {
+    data = safeClone(defaultData);
+    save();
+    toast('Alt er nullstilt');
+  }
+}
+
+// ========== EVENT DELEGATION ==========
+document.addEventListener('click', (e) => {
+  const del = e.target.closest('.delete');
+  if (!del) return;
+  const id = del.dataset.id;
+  if (!id) return;
+  if (del.closest('#txList')) {
+    delTx(id);
+    return;
+  }
+  if (del.closest('#goalList')) {
+    delGoal(id);
+    return;
+  }
+});
+
+// ========== INIT ==========
+document.getElementById('td').value = dateNow();
+render();
+</script>
+</body>
+</html>
