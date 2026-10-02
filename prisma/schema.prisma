@@ -1,0 +1,18 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model MockTransaction {
+  id          String   @id @default(cuid())
+  description String
+  amount      Int
+  type        String
+  category    String
+  occurredAt  DateTime
+  createdAt   DateTime @default(now())
+}
