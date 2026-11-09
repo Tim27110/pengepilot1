@@ -79,7 +79,11 @@ h2 { margin: 0 0 3px; font-size: 17px; line-height: 1.35; }
 .suggestion-list li { border-left: 3px solid #c2a15a; border-radius: 2px; padding: 9px 11px; background: #faf8f1; font-size: 12px; }
 .disclaimer { margin: 15px 0 0; color: var(--muted); font-size: 11px; }
 .text-link { color: var(--accent); font-size: 12px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.transaction-list-wrap { min-width: 0; }
 .transaction-list { display: grid; }
+.transaction-filters { display: grid; grid-template-columns: minmax(220px, 1.6fr) repeat(2, minmax(150px, 1fr)); align-items: end; gap: 12px; margin-bottom: 15px; }
+.filter-search { min-width: 0; }
+.filter-result-count { grid-column: 1 / -1; margin: -4px 0 0; color: var(--muted); font-size: 11px; }
 .tx-row { display: flex; align-items: center; justify-content: space-between; gap: 15px; border-bottom: 1px solid #edf0f2; padding: 11px 0; }
 .tx-row:first-child { padding-top: 0; }
 .tx-row:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -121,8 +125,9 @@ h2 { margin: 0 0 3px; font-size: 17px; line-height: 1.35; }
   .panel-heading { flex-direction: column; gap: 9px; }
   .chart-legend { white-space: normal; }
   .monthly-chart { gap: 5px; }
-  .transaction-form { grid-template-columns: 1fr; gap: 12px; }
-  .field-wide, .form-actions { grid-column: auto; }
+  .transaction-form, .transaction-filters { grid-template-columns: 1fr; gap: 12px; }
+  .field-wide, .form-actions, .filter-result-count { grid-column: auto; }
+  .filter-result-count { margin-top: 0; }
   .tx-row { gap: 8px; }
   .header-note { font-size: 11px; }
 }

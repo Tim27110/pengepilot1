@@ -32,7 +32,7 @@ export default function TransactionsPage() {
             <p className="muted">Nyeste transaksjoner vises først.</p>
           </div>
         </div>
-        <TransactionList refreshKey={refreshKey} />
+        <TransactionList refreshKey={refreshKey} showFilters />
       </section>
     </div>
   )
