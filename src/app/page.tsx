@@ -3,6 +3,8 @@ import prisma from '../lib/prisma'
 import { formatNok } from '../lib/finance'
 import TransactionList from '../components/TransactionList'
 
+export const dynamic = 'force-dynamic'
+
 type MonthlyTotals = { income: number; expenses: number }
 type ExpenseCategory = { name: string; amount: number }
 
