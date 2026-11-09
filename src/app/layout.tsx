@@ -3,7 +3,7 @@ import React from 'react'
 
 export const metadata = {
   title: 'PengePilot',
-  description: 'En enkel personlig økonomi-app — Oversikt og transaksjoner'
+  description: 'En enkel personlig økonomi-app for oversikt, transaksjoner og analyse.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -11,15 +11,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="no">
       <body>
         <main className="app">
-          <div className="top">
-            <div className="logo">PengePilot</div>
-            <div className="small">V2 • migration/nextjs-prisma-scaffold</div>
-          </div>
-          <nav className="nav">
+          <header className="top">
+            <a className="logo" href="/">PengePilot</a>
+            <span className="small header-note">Personlig økonomi</span>
+          </header>
+          <nav className="nav" aria-label="Hovedmeny">
             <a href="/">Oversikt</a>
             <a href="/transactions">Transaksjoner</a>
           </nav>
           {children}
+          <footer className="app-footer">Oversikten bygger kun på transaksjoner du selv har registrert.</footer>
         </main>
       </body>
     </html>

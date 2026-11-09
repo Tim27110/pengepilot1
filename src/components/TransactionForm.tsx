@@ -1,49 +1,112 @@
 'use client'
+
 import React, { useState } from 'react'
+import { categoryForType, type TransactionType } from '../lib/finance'
 
-const categories = ['Mat','Bolig','Transport','Abonnement','Fritid','Helse','Annet']
+function localDateValue(): string {
+  const today = new Date()
+  const offset = today.getTimezoneOffset() * 60_000
+  return new Date(today.getTime() - offset).toISOString().slice(0, 10)
+}
 
-export default function TransactionForm({ onSaved }: { onSaved?: () => void }){
-  const [desc, setDesc] = useState('')
+export default function TransactionForm({ onSaved }: { onSaved?: () => void }) {
+  const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [type, setType] = useState<'expense'|'income'>('expense')
-  const [cat, setCat] = useState(categories[0])
-  const [date, setDate] = useState(new Date().toISOString().slice(0,10))
-  const [err, setErr] = useState('')
+  const [type, setType] = useState<TransactionType>('expense')
+  const [category, setCategory] = useState('Mat')
+  const [date, setDate] = useState(localDateValue)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const categories = categoryForType(type)
 
-  function fmtKr(n:number){
-    return new Intl.NumberFormat('nb-NO',{minimumFractionDigits:0,maximumFractionDigits:2}).format(n/100) + ' kr'
+  function changeType(nextType: TransactionType) {
+    setType(nextType)
+    setCategory(nextType === 'income' ? 'Inntekt' : 'Mat')
   }
 
-  async function handleSubmit(e:React.FormEvent){
-    e.preventDefault()
-    setErr('')
-    if (!desc || !amount) { setErr('Fyll inn beskrivelse og beløp'); return }
-    const parsed = parseFloat(amount.replace(',','.'))
-    if (isNaN(parsed) || parsed <= 0) { setErr('Beløp må være et tall større enn 0'); return }
-    const cents = Math.round(parsed * 100)
-    const payload = { description: desc, amount: cents, type, category: cat, date }
-    try{
-      const res = await fetch('/api/transactions', { method: 'POST', body: JSON.stringify(payload), headers: {'Content-Type':'application/json'} })
-      if (!res.ok) throw new Error(await res.text())
-      setDesc(''); setAmount(''); if (onSaved) onSaved()
-    }catch(err:any){ setErr(err.message || 'Lagring feilet') }
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+    const cleanDescription = description.trim()
+    const normalizedAmount = amount.trim().replace(',', '.')
+
+    if (!cleanDescription) {
+      setError('Skriv inn en beskrivelse.')
+      return
+    }
+    if (cleanDescription.length > 120) {
+      setError('Beskrivelsen kan ikke være lengre enn 120 tegn.')
+      return
+    }
+    if (!/^\d+(?:\.\d{1,2})?$/.test(normalizedAmount)) {
+      setError('Skriv inn et positivt beløp med maksimalt to desimaler.')
+      return
+    }
+    const value = Number(normalizedAmount)
+    const amountOre = Math.round(value * 100)
+    if (!Number.isSafeInteger(amountOre) || amountOre <= 0) {
+      setError('Beløpet må være større enn 0 og innenfor gyldig størrelse.')
+      return
+    }
+    if (!date || Number.isNaN(Date.parse(`${date}T00:00:00`))) {
+      setError('Velg en gyldig dato.')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description: cleanDescription, amount: amountOre, type, category, date }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Lagring feilet.')
+      setDescription('')
+      setAmount('')
+      onSaved?.()
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Lagring feilet. Prøv igjen.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="form-row">
-      <input className="input" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="Beskrivelse" />
-      <input className="input" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Beløp (eks: 123.45)" />
-      <select className="input" value={type} onChange={e=>setType(e.target.value as any)}>
-        <option value="expense">Utgift</option>
-        <option value="income">Inntekt</option>
-      </select>
-      <select className="input" value={cat} onChange={e=>setCat(e.target.value)}>
-        {categories.map(c=> <option key={c}>{c}</option>)}
-      </select>
-      <input className="input" type="date" value={date} onChange={e=>setDate(e.target.value)} />
-      <button className="button" type="submit">Lagre</button>
-      {err && <div className="small" style={{color:'var(--danger)'}}>{err}</div>}
+    <form onSubmit={handleSubmit} className="transaction-form">
+      <label className="field field-wide">
+        <span>Beskrivelse</span>
+        <input className="input" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={120} required />
+      </label>
+      <label className="field">
+        <span>Beløp</span>
+        <div className="amount-input">
+          <input className="input" inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="0,00" required aria-describedby="amount-help" />
+          <span>kr</span>
+        </div>
+        <span className="field-hint" id="amount-help">Bruk komma eller punktum, maks to desimaler.</span>
+      </label>
+      <label className="field">
+        <span>Type</span>
+        <select className="input" value={type} onChange={(event) => changeType(event.target.value as TransactionType)}>
+          <option value="expense">Utgift</option>
+          <option value="income">Inntekt</option>
+        </select>
+      </label>
+      <label className="field">
+        <span>Kategori</span>
+        <select className="input" value={category} onChange={(event) => setCategory(event.target.value)}>
+          {categories.map((item) => <option key={item} value={item}>{item}</option>)}
+        </select>
+      </label>
+      <label className="field">
+        <span>Dato</span>
+        <input className="input" type="date" value={date} onChange={(event) => setDate(event.target.value)} required />
+      </label>
+      {error && <p className="form-error field-wide" role="alert">{error}</p>}
+      <div className="form-actions field-wide">
+        <button className="button" type="submit" disabled={saving}>{saving ? 'Lagrer …' : 'Lagre transaksjon'}</button>
+      </div>
     </form>
   )
 }

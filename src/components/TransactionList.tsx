@@ -1,61 +1,74 @@
 'use client'
-import React, { useEffect, useState } from 'react'
 
-function kr(cents:number){
-  return new Intl.NumberFormat('nb-NO',{minimumFractionDigits:0,maximumFractionDigits:2}).format(cents/100) + ' kr'
+import React, { useEffect, useState } from 'react'
+import { formatDate, formatNok } from '../lib/finance'
+
+type Transaction = {
+  id: string
+  description: string
+  amount: number
+  type: 'income' | 'expense'
+  category: string
+  occurredAt: string
 }
 
-export default function TransactionList({ limit }: { limit?: number }){
-  const [items, setItems] = useState<any[]>([])
+export default function TransactionList({ limit, refreshKey = 0 }: { limit?: number; refreshKey?: number }) {
+  const [items, setItems] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  async function load(){
+  async function load() {
     setLoading(true)
-    const res = await fetch('/api/transactions')
-    if (!res.ok) { setItems([]); setLoading(false); return }
-    const data = await res.json()
-    if (limit) setItems(data.slice(0,limit))
-    else setItems(data)
-    setLoading(false)
+    setError('')
+    try {
+      const response = await fetch('/api/transactions', { cache: 'no-store' })
+      if (!response.ok) throw new Error('Kunne ikke hente transaksjoner.')
+      const data: Transaction[] = await response.json()
+      setItems(limit ? data.slice(0, limit) : data)
+    } catch {
+      setError('Transaksjonene kunne ikke lastes. Prøv igjen.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(()=>{ load() }, [])
+  useEffect(() => {
+    void load()
+  }, [limit, refreshKey])
 
-  async function del(id:string){
-    if (!confirm('Slett transaksjon?')) return
-    const res = await fetch(`/api/transactions/${id}`,{method:'DELETE'})
-    if (res.ok) load()
-    else alert('Slett feilet')
+  async function del(id: string) {
+    if (!confirm('Vil du slette denne transaksjonen?')) return
+    try {
+      const response = await fetch(`/api/transactions/${id}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('Sletting feilet.')
+      await load()
+    } catch {
+      setError('Transaksjonen kunne ikke slettes. Prøv igjen.')
+    }
   }
 
-  if (loading) return <div className="small">Laster...</div>
-  if (!items.length) return <div className="small">Ingen transaksjoner</div>
-
-  const income = items.filter(i=>i.type==='income').reduce((s,i)=>s+i.amount,0)
-  const expenses = items.filter(i=>i.type==='expense').reduce((s,i)=>s+i.amount,0)
+  if (loading) return <p className="empty-state">Laster transaksjoner …</p>
+  if (error) return <p className="form-error" role="alert">{error}</p>
+  if (!items.length) return <p className="empty-state">Ingen transaksjoner registrert ennå.</p>
 
   return (
-    <div>
-      <div className="grid" style={{marginBottom:12}}>
-        <div className="stat card"><div className="small">Inntekt</div><div style={{fontWeight:700}}>{kr(income)}</div></div>
-        <div className="stat card"><div className="small">Utgifter</div><div style={{fontWeight:700}}>{kr(expenses)}</div></div>
-        <div className="stat card"><div className="small">Til overs</div><div style={{fontWeight:700}}>{kr(income-expenses)}</div></div>
-      </div>
-
-      <div>
-        {items.map(i=> (
-          <div key={i.id} className="tx-row">
-            <div>
-              <div style={{fontWeight:700}}>{i.description}</div>
-              <div className="small">{new Date(i.occurredAt).toISOString().slice(0,10)} · {i.category}</div>
-            </div>
-            <div style={{textAlign:'right'}}>
-              <div style={{fontWeight:700}}>{i.type==='income'?'+':'−'}{kr(i.amount)}</div>
-              <button className="small" onClick={()=>del(i.id)}>Slett</button>
-            </div>
+    <div className="transaction-list">
+      {items.map((item) => (
+        <article key={item.id} className="tx-row">
+          <div className="tx-details">
+            <strong>{item.description}</strong>
+            <span className="small">{formatDate(item.occurredAt)} · {item.category}</span>
           </div>
-        ))}
-      </div>
+          <div className="tx-amount">
+            <strong className={item.type === 'income' ? 'positive' : ''}>
+              {item.type === 'income' ? '+' : '−'}{formatNok(item.amount)}
+            </strong>
+            <button className="delete-button" onClick={() => void del(item.id)} type="button" aria-label={`Slett ${item.description}`}>
+              Slett
+            </button>
+          </div>
+        </article>
+      ))}
     </div>
   )
 }
