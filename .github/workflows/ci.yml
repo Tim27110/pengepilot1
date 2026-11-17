@@ -9,8 +9,24 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pengepilot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d pengepilot_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
-      DATABASE_URL: "file:./dev.db"
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pengepilot_test
+      DIRECT_URL: postgresql://postgres:postgres@localhost:5432/pengepilot_test
 
     steps:
       - name: Checkout
@@ -20,6 +36,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20.x"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm install
@@ -30,8 +47,14 @@ jobs:
       - name: Prisma validate
         run: npx prisma validate
 
+      - name: Prisma migration deploy
+        run: npx prisma migrate deploy
+
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build
